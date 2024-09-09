@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -13,13 +13,12 @@ using Microsoft.Win32;
 
 namespace WPF_Brickstore
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         string kivalasztottFajl = "";
         List<LegoClass> legoItems = new List<LegoClass>();
+        List<LegoClass> szurtLista = new List<LegoClass>(); // Storing filtered list
+
         public MainWindow()
         {
             InitializeComponent();
@@ -30,6 +29,7 @@ namespace WPF_Brickstore
         {
             Szures();
         }
+
         private void fajlValasztas()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
@@ -56,18 +56,41 @@ namespace WPF_Brickstore
                 fajlValasztas();
             }
         }
+
         private void Szures()
         {
             string keresettNev = txtNev.Text.ToLower();
             string keresettAzon = txtAzon.Text.ToLower();
 
-            var szurtLista = legoItems.Where(item =>
+            szurtLista = legoItems.Where(item =>
                 (string.IsNullOrEmpty(keresettNev) || item.ItemName.ToLower().StartsWith(keresettNev)) &&
                 (string.IsNullOrEmpty(keresettAzon) || item.ItemID.ToString().ToLower().StartsWith(keresettAzon))
             ).ToList();
 
             dgElemek.ItemsSource = szurtLista;
+
+            // Frissítsd a ComboBoxot a szűrt lista alapján
+            FrissitComboBox();
         }
 
+        private void FrissitComboBox()
+        {
+            // HashSet a kategóriák egyediségének biztosításához
+            var kategoriak = new HashSet<string>(szurtLista.Select(item => item.CategoryName));
+
+            cbKat.ItemsSource = kategoriak;
+        }
+
+        private void cbKat_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Ha van kiválasztott kategória, akkor újra szűrjük a listát
+            if (cbKat.SelectedItem != null)
+            {
+                string kivalasztottKategoria = cbKat.SelectedItem.ToString();
+
+                var kategoriaraSzurtLista = szurtLista.Where(item => item.CategoryName == kivalasztottKategoria).ToList();
+                dgElemek.ItemsSource = kategoriaraSzurtLista;
+            }
+        }
     }
 }
